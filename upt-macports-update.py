@@ -121,10 +121,13 @@ def update(portfile_path, pypi_name, old_version):
                                        depend_libs_indent)
 
     # Create the new Portfile
-    new_file = ''.join(new_lines)
-    new_file = new_file.replace('DEPENDS_LIB_PLACEHOLDER',
-                                ' \\\n'.join(new_depends_lib) + '\n')
-    print(new_file)
+    new_path = f'py-{pypi_name.lower()}/Portfile.new'
+    print(f'[+] Writing new Portfile to {new_path}')
+    with open(new_path, 'w') as f:
+        new_file = ''.join(new_lines)
+        new_file = new_file.replace('DEPENDS_LIB_PLACEHOLDER',
+                                    ' \\\n'.join(new_depends_lib) + '\n')
+        f.write(new_file)
 
 
 def main():
