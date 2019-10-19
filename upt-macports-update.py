@@ -18,7 +18,13 @@ class UptDiff(object):
     @property
     def new_requirements(self):
         # TODO
-        return []
+        old_names = [req.name for req in self.old.requirements.get('run', [])]
+        new_names = [req.name for req in self.new.requirements.get('run', [])]
+        added_names = set(new_names) - set(old_names)
+        return [
+            req for req in self.new.requirements.get('run', [])
+            if req.name in added_names
+        ]
 
     @property
     def updated_requirements(self):
