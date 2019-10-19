@@ -127,7 +127,7 @@ def update(portfile_path, pypi_name, old_version):
                                        depend_libs_indent)
 
     # Create the new Portfile
-    new_path = f'py-{pypi_name.lower()}/Portfile.new'
+    new_path = f'python/py-{pypi_name.lower()}/Portfile.new'
     print(f'[+] Writing new Portfile to {new_path}')
     with open(new_path, 'w') as f:
         new_file = ''.join(new_lines)
@@ -138,7 +138,7 @@ def update(portfile_path, pypi_name, old_version):
 
 def main():
     pypi_name = sys.argv[1]
-    portfile_path = f'py-{pypi_name.lower()}/Portfile'
+    portfile_path = f'python/py-{pypi_name.lower()}/Portfile'
     old_version = None
     with open(portfile_path) as f:
         for line in f.readlines():
