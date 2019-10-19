@@ -56,7 +56,12 @@ def update(portfile_path, pypi_name, old_version):
     old_depends_lineno = None
     with open(portfile_path) as f:
         for lineno, line in enumerate(f.readlines()):
-            m = re.match('(\s+)depends_lib-append(\s+)(.*)', line)
+            # TODO: should we also consider depends_lib?
+            # NOTE: we only consider 0 or 1 level of indentation. More
+            # indentation probably means we are in a special case (typically,
+            # for specific versions of Python), and it is too tricky to handle
+            # these.
+            m = re.match('(    )?depends_lib-append(\s+)(.*)', line)
             if m:
                 depend_libs_indent = m.group(1)
                 in_depends_lib = True
