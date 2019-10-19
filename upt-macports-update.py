@@ -67,9 +67,8 @@ def update(portfile_path, pypi_name, old_version):
     in_depends_lib = False
     old_depends_lib = []
     depend_libs_indent = 0
-    old_depends_lineno = None
     with open(portfile_path) as f:
-        for lineno, line in enumerate(f.readlines()):
+        for line in f.readlines():
             # TODO: should we also consider depends_lib?
             # NOTE: we only consider 0 or 1 level of indentation. More
             # indentation probably means we are in a special case (typically,
@@ -80,12 +79,12 @@ def update(portfile_path, pypi_name, old_version):
                 depend_libs_indent = m.group(1)
                 in_depends_lib = True
                 line = f'{m.group(3)}\n'
-                old_depends_lineno = lineno
 
             if in_depends_lib:
                 old_depends_lib.append(_clean_depends_line(line))
                 if not line.endswith('\\\n'):
                     in_depends_lib = False
+                    new_lines.append('DEPENDS_LIB_PLACEHOLDER')
                 continue
 
             # Update version
@@ -122,9 +121,9 @@ def update(portfile_path, pypi_name, old_version):
                                        depend_libs_indent)
 
     # Create the new Portfile
-    new_file = ''.join(new_lines[:old_depends_lineno])
-    new_file += ' \\\n'.join(new_depends_lib) + '\n'
-    new_file += ''.join(new_lines[old_depends_lineno:])
+    new_file = ''.join(new_lines)
+    new_file = new_file.replace('DEPENDS_LIB_PLACEHOLDER',
+                                ' \\\n'.join(new_depends_lib) + '\n')
     print(new_file)
 
 
