@@ -39,6 +39,20 @@ def _clean_depends_line(line):
     return line.strip()
 
 
+def _upgrade_depends(old_depends, pdiff, indent=''):
+    old_depends.extend([
+        f'port-py${{python.version}}-{req.name}'
+        for req in pdiff.new_requirements
+    ])
+
+    return [
+        f'{indent}depends_lib-append  {lib}' if i == 0
+        else f'{" " * (len(indent) + len("depends_lib-append  "))}'
+             f'{lib}'
+        for i, lib in enumerate(old_depends)
+    ]
+
+
 def update(portfile_path, pypi_name, old_version):
     print(f'[+] Updating {pypi_name} (currently at version {old_version})')
     frontend = PyPIFrontend()
@@ -103,18 +117,9 @@ def update(portfile_path, pypi_name, old_version):
                 line = f'{m.group(1)}size{m.group(2)}{size}{m.group(3)}\n'
             new_lines.append(line)
 
-    # Handle dependencies
-    old_depends_lib.extend([
-        f'port-py${{python.version}}-{req.name}'
-        for req in pdiff.new_requirements
-    ])
-
-    new_depends_lib = [
-        f'{depend_libs_indent}depends_lib-append  {lib}' if i == 0
-        else f'{" " * (len(depend_libs_indent) + len("depends_lib-append  "))}'
-             f'{lib}'
-        for i, lib in enumerate(old_depends_lib)
-    ]
+    # Upgrade dependencies
+    new_depends_lib = _upgrade_depends(old_depends_lib, pdiff,
+                                       depend_libs_indent)
 
     # Create the new Portfile
     new_file = ''.join(new_lines[:old_depends_lineno])
