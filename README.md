@@ -5,7 +5,7 @@ This will eventually end up being part of upt itself.
 ## Usage
 
 $ cd $MACPORTS_DIR/
-$ python upt-macports-update.py <pypi name>
+$ python upt_macports_update.py <pypi name>
 
 ## Features
 - Update version
