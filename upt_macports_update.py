@@ -17,7 +17,6 @@ class UptDiff(object):
 
     @property
     def new_requirements(self):
-        # TODO
         old_names = [req.name for req in self.old.requirements.get('run', [])]
         new_names = [req.name for req in self.new.requirements.get('run', [])]
         added_names = set(new_names) - set(old_names)
@@ -33,7 +32,13 @@ class UptDiff(object):
 
     @property
     def deleted_requirements(self):
-        # TODO
+        old_names = [req.name for req in self.old.requirements.get('run', [])]
+        new_names = [req.name for req in self.new.requirements.get('run', [])]
+        deleted_names = set(old_names) - set(new_names)
+        return [
+            req for req in self.old.requirements.get('run', [])
+            if req.name in deleted_names
+        ]
         return []
 
 
@@ -46,8 +51,16 @@ def _clean_depends_line(line):
 
 
 def _upgrade_depends(old_depends, pdiff, indent=''):
+    # Start by removing requirements that are no longer needed
+    for deleted_req in pdiff.deleted_requirements:
+        try:
+            old_depends.remove(f'port:py${{python.version}}-{deleted_req.name}')
+        except ValueError:
+            pass
+
+    # Then add new requirements
     old_depends.extend([
-        f'port-py${{python.version}}-{req.name}'
+        f'port:py${{python.version}}-{req.name}'
         for req in pdiff.new_requirements
     ])
 

@@ -12,9 +12,9 @@ $ python upt_macports_update.py <pypi name>
 - Reset revision to 0
 - Update checksums
 - Update archive size
-- Update depends_lib-append (only adds new requirements)
+- Add new requirements to "depends_lib-append"
+- Remove no longer needed requirements from "depends_lib-append"
 
 ## Shortcomings
 - Only works with PyPI ports
-- Does not remove deleted ports
 - Does not add new dependencies if there were no dependencies to begin with
