@@ -42,6 +42,10 @@ class UptDiff(object):
         return []
 
 
+def _reqformat(req):
+    return f'port:py${{python.version}}-{req.name.lower()}'
+
+
 def _clean_depends_line(line):
     if line.endswith('\n'):
         line = line[:-1]
@@ -54,14 +58,13 @@ def _upgrade_depends(old_depends, pdiff, indent=''):
     # Start by removing requirements that are no longer needed
     for deleted_req in pdiff.deleted_requirements:
         try:
-            old_depends.remove(f'port:py${{python.version}}-{deleted_req.name}')
+            old_depends.remove(_reqformat(deleted_req))
         except ValueError:
             pass
 
     # Then add new requirements
     old_depends.extend([
-        f'port:py${{python.version}}-{req.name}'
-        for req in pdiff.new_requirements
+        _reqformat(req) for req in pdiff.new_requirements
     ])
 
     return [
