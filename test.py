@@ -46,7 +46,7 @@ class TestPrototype(unittest.TestCase):
         ]
         new_depends = umu._upgrade_depends(old_depends, pdiff)
         expected = [
-            'depends_lib-append  port:py${python.version}-baz',
+            'port:py${python.version}-baz',
         ]
         self.assertEqual(new_depends, expected)
 

@@ -54,7 +54,7 @@ def _clean_depends_line(line):
     return line.strip()
 
 
-def _upgrade_depends(old_depends, pdiff, indent=''):
+def _upgrade_depends(old_depends, pdiff):
     # Start by removing requirements that are no longer needed
     for deleted_req in pdiff.deleted_requirements:
         try:
@@ -67,12 +67,7 @@ def _upgrade_depends(old_depends, pdiff, indent=''):
         _reqformat(req) for req in pdiff.new_requirements
     ])
 
-    return [
-        f'{indent}depends_lib-append  {lib}' if i == 0
-        else f'{" " * (len(indent) + len("depends_lib-append  "))}'
-             f'{lib}'
-        for i, lib in enumerate(old_depends)
-    ]
+    return old_depends
 
 
 def update(portfile_path, pypi_name, old_version):
@@ -139,8 +134,13 @@ def update(portfile_path, pypi_name, old_version):
             new_lines.append(line)
 
     # Upgrade dependencies
-    new_depends_lib = _upgrade_depends(old_depends_lib, pdiff,
-                                       depend_libs_indent)
+    new_depends_lib = _upgrade_depends(old_depends_lib, pdiff)
+    new_depends_lib_text = ' \\\n'.join([
+        f'{depend_libs_indent}depends_lib-append  {lib}' if i == 0
+        else f'{" " * (len(depend_libs_indent) + len("depends_lib-append  "))}'
+             f'{lib}'
+        for i, lib in enumerate(new_depends_lib)
+    ]) + '\n'
 
     # Create the new Portfile
     new_path = f'python/py-{pypi_name.lower()}/Portfile.new'
@@ -148,7 +148,7 @@ def update(portfile_path, pypi_name, old_version):
     with open(new_path, 'w') as f:
         new_file = ''.join(new_lines)
         new_file = new_file.replace('DEPENDS_LIB_PLACEHOLDER',
-                                    ' \\\n'.join(new_depends_lib) + '\n')
+                                    new_depends_lib_text)
         f.write(new_file)
 
 
