@@ -89,6 +89,8 @@ def update(portfile_path, frontend, pkg_name, old_version,
     in_depends_lib = False
     old_depends_lib = []
     depend_libs_indent = ''
+    sep_indent = ''
+    next_lines_indent = ''
     with open(portfile_path) as f:
         for line in f.readlines():
             # TODO: should we also consider depends_lib?
@@ -100,10 +102,19 @@ def update(portfile_path, frontend, pkg_name, old_version,
             if m:
                 depend_libs_indent = m.group(1) or ''
                 in_depends_lib = True
+                sep_indent = m.group(2)
                 line = f'{m.group(3)}\n'
+                # When the first line is "depends_lib-append \", we want to
+                # decrement the size of the separator to get an aesthetically
+                # pleasant result when printing out the new Portfile.
+                if line == '\\\n':
+                    sep_indent = ' ' * (len(sep_indent) - 1)
 
             if in_depends_lib:
                 old_depends_lib.append(_clean_depends_line(line))
+                m = re.match('(\s*).*', line)
+                if m:
+                    next_lines_indent = m.group(1)
                 if not line.endswith('\\\n'):
                     in_depends_lib = False
                     new_lines.append('DEPENDS_LIB_PLACEHOLDER')
@@ -144,9 +155,8 @@ def update(portfile_path, frontend, pkg_name, old_version,
     # Upgrade dependencies
     new_depends_lib = _upgrade_depends(old_depends_lib, pdiff)
     new_depends_lib_text = ' \\\n'.join([
-        f'{depend_libs_indent}depends_lib-append  {lib}' if i == 0
-        else f'{" " * (len(depend_libs_indent) + len("depends_lib-append  "))}'
-             f'{lib}'
+        f'{depend_libs_indent}depends_lib-append{sep_indent}{lib}' if i == 0
+        else f'{next_lines_indent}{lib}'
         for i, lib in enumerate(new_depends_lib)
     ]) + '\n'
 
