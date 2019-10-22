@@ -1,11 +1,11 @@
-# Prototype to upgrade PyPI ports in Macports.
+# Prototype to upgrade ports in Macports.
 
 This will eventually end up being part of upt itself.
 
 ## Usage
 
 $ cd $MACPORTS_DIR/
-$ python upt_macports_update.py <pypi name>
+$ python upt_macports_update.py <package name>
 
 ## Features
 - Update version
@@ -16,5 +16,5 @@ $ python upt_macports_update.py <pypi name>
 - Remove no longer needed requirements from "depends_lib-append"
 
 ## Shortcomings
-- Only works with PyPI ports
+- Only works with PyPI and Rubygems ports
 - Does not add new dependencies if there were no dependencies to begin with

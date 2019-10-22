@@ -4,6 +4,7 @@ import sys
 
 import upt
 from upt_pypi.upt_pypi import PyPIFrontend
+from upt_rubygems.upt_rubygems import RubyGemsFrontend
 
 
 class UptDiff(object):
@@ -42,8 +43,12 @@ class UptDiff(object):
         return []
 
 
-def _reqformat(req):
+def _python_reqformat(req):
     return f'port:py${{python.version}}-{req.name.lower()}'
+
+
+def _ruby_reqformat(req):
+    return f'rb${{ruby.suffix}}-{req.name.lower()}'
 
 
 def _clean_depends_line(line):
@@ -70,13 +75,13 @@ def _upgrade_depends(old_depends, pdiff):
     return old_depends
 
 
-def update(portfile_path, pypi_name, old_version):
-    print(f'[+] Updating {pypi_name} (currently at version {old_version})')
-    frontend = PyPIFrontend()
-    old = frontend.parse(pypi_name, old_version)
-    new = frontend.parse(pypi_name)
+def update(portfile_path, frontend, pkg_name, old_version,
+           archive_type=upt.ArchiveType.SOURCE_TARGZ):
+    print(f'[+] Updating {pkg_name} (currently at version {old_version})')
+    old = frontend.parse(pkg_name, old_version)
+    new = frontend.parse(pkg_name)
     if old.version == new.version:
-        print(f'{pypi_name} is already at the latest version')
+        print(f'{pkg_name} is already at the latest version')
         sys.exit(0)
     pdiff = UptDiff(old, new)
 
@@ -108,6 +113,9 @@ def update(portfile_path, pypi_name, old_version):
             m = re.match('^version(\s+)(.*)\n$', line)
             if m:
                 line = f'version{m.group(1)}{pdiff.new_version}\n'
+            m = re.match('(ruby.setup\s\w )[^\s]+(gem .*)', line)
+            if m:
+                line = f'{m.group(1)}{pdiff.new_version}{m.group(2)}\n'
 
             # Reset revision to 0
             m = re.match('^revision(\s+).*', line)
@@ -117,19 +125,19 @@ def update(portfile_path, pypi_name, old_version):
             # Update rmd160
             m = re.match('^(.*)rmd160(\s+)[0-9a-f]{40}(.*)$', line)
             if m:
-                rmd = new.get_archive().rmd160
+                rmd = new.get_archive(archive_type=archive_type).rmd160
                 line = f'{m.group(1)}rmd160{m.group(2)}{rmd}{m.group(3)}\n'
 
             # Update sha256
             m = re.match('^(.*)sha256(\s+)[0-9a-f]{64}(.*)$', line)
             if m:
-                sha = new.get_archive().sha256
+                sha = new.get_archive(archive_type=archive_type).sha256
                 line = f'{m.group(1)}sha256{m.group(2)}{sha}{m.group(3)}\n'
 
             # Update size
             m = re.match('^(.*)size(\s+)\d+(.*)$', line)
             if m:
-                size = new.get_archive().size
+                size = new.get_archive(archive_type=archive_type).size
                 line = f'{m.group(1)}size{m.group(2)}{size}{m.group(3)}\n'
             new_lines.append(line)
 
@@ -143,7 +151,7 @@ def update(portfile_path, pypi_name, old_version):
     ]) + '\n'
 
     # Create the new Portfile
-    new_path = f'python/py-{pypi_name.lower()}/Portfile.new'
+    new_path = f'{portfile_path}.new'
     print(f'[+] Writing new Portfile to {new_path}')
     with open(new_path, 'w') as f:
         new_file = ''.join(new_lines)
@@ -153,18 +161,35 @@ def update(portfile_path, pypi_name, old_version):
 
 
 def main():
-    pypi_name = sys.argv[1]
-    portfile_path = f'python/py-{pypi_name.lower()}/Portfile'
+    frontend = sys.argv[1]
+    package_name = sys.argv[2]
+    global _reqformat
+    if frontend == 'pypi':
+        portfile_path = f'python/py-{package_name.lower()}/Portfile'
+        _reqformat = _python_reqformat
+        version_regexp = '^version\s+(.*)\n'
+        frontend = PyPIFrontend()
+        archive_type = upt.ArchiveType.SOURCE_TARGZ
+    elif frontend == 'rubygems':
+        portfile_path = f'ruby/rb-{package_name.lower()}/Portfile'
+        _reqformat = _ruby_reqformat
+        version_regexp = 'ruby.setup\s+\w+ ([^\s]+) gem .*'
+        frontend = RubyGemsFrontend()
+        archive_type = upt.ArchiveType.RUBYGEM
+    else:
+        raise ValueError(f'Invalid frontend {frontend}')
+
     old_version = None
     with open(portfile_path) as f:
         for line in f.readlines():
-            m = re.match('^version\s+(.*)\n', line)
+            m = re.match(version_regexp, line)
             if m:
                 old_version = m.group(1)
                 break
         else:
-            print(f'Could not find current version for {pypi_name}')
-    update(portfile_path, pypi_name, old_version)
+            print(f'Could not find current version for {package_name}')
+    update(portfile_path, frontend, package_name, old_version,
+           archive_type=archive_type)
 
 
 if __name__ == '__main__':
