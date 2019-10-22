@@ -88,7 +88,7 @@ def update(portfile_path, frontend, pkg_name, old_version,
     new_lines = []
     in_depends_lib = False
     old_depends_lib = []
-    depend_libs_indent = 0
+    depend_libs_indent = ''
     with open(portfile_path) as f:
         for line in f.readlines():
             # TODO: should we also consider depends_lib?
