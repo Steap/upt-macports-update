@@ -93,7 +93,7 @@ def update(portfile_path, pypi_name, old_version):
             # these.
             m = re.match('(    )?depends_lib-append(\s+)(.*)', line)
             if m:
-                depend_libs_indent = m.group(1)
+                depend_libs_indent = m.group(1) or ''
                 in_depends_lib = True
                 line = f'{m.group(3)}\n'
 
